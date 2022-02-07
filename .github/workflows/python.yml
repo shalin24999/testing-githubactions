@@ -21,7 +21,7 @@ jobs:
       - name: List all changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ $fname == *.yaml ]] || [[ $fname == *.json ]] || [[ $fname == *.yml ]]; then
+            if [[ $file == *.yaml ]] || [[ $file == *.json ]] || [[ $file == *.yml ]]; then
               echo $fname
             fi
           done
