@@ -6,18 +6,21 @@ from requests.auth import HTTPBasicAuth
 import pprint as pp
 import time
 import os
-
+import json
 #Libs and auth
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
-username = os.getenv('USERNAME')
+username = os.getenv('USER_NAME')
+username1 = os.getenv(USER_NAME)
 token = os.getenv('TOKEN')
 service_account_shuffler = os.getenv('SERVICE_ACCOUNT_SHUFFLER')
 pr_number = os.getenv('PR_NUMBER')
 print(username)
+print("1:",username1)
 #Creds for cloud function API
-credentials = service_account.Credentials.from_service_account_info(service_account_shuffler)
+json_account_info = json.loads(service_account_shuffler)
+credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
 locations = service.projects().locations().list(name="projects/shuffler").execute()
 
