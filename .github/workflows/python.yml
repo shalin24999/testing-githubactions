@@ -30,7 +30,12 @@ jobs:
         run: |
           echo ${{ github.event.number }}
           
-      - name: Print pull request number
+      - name: Print author
         run: |
-          echo ${{ github.event.pull_request }}
-
+          echo ${{ github.event.pull_request.user.login }}
+    
+      - name: Print files
+        run: |
+          echo ${{ github.event.pull_request.files }}
+        
+      
