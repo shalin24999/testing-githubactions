@@ -14,12 +14,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0  # OR "2" -> To retrieve the preceding commit. 
-      - name: Setting up env variables
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-          USER_NAME: ${{ secrets.USERNAME }}
-          TOKEN: ${{ secrets.TOKEN }}
-          SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.SERVICE_ACCOUNT_SHUFFLER }}
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8' # Version range or exact version of a Python version to use, using SemVer's version range syntax
@@ -51,6 +45,11 @@ jobs:
           echo "requirements installed"
 
       - name: Running app verification script
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          USER_NAME: ${{ secrets.USERNAME }}
+          TOKEN: ${{ secrets.TOKEN }}
+          SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.SERVICE_ACCOUNT_SHUFFLER }}
         run : |
           cd app_verification
           python app_verifier.py
