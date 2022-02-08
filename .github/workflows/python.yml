@@ -25,3 +25,7 @@ jobs:
               echo $file
             fi
           done
+          
+      - name: Print pull request number
+        run: |
+          echo ${{ github.event.number }}
