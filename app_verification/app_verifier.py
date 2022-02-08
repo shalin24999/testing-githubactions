@@ -11,10 +11,10 @@ import json
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
-username = os.getenv('USER_NAME')
-token = os.getenv('TOKEN')
-service_account_shuffler = os.getenv('SERVICE_ACCOUNT_SHUFFLER')
-pr_number = os.getenv('PR_NUMBER')
+username = os.environ('USER_NAME')
+token = os.environ('TOKEN')
+service_account_shuffler = os.environ('SERVICE_ACCOUNT_SHUFFLER')
+pr_number = os.environ('PR_NUMBER')
 print(username)
 #Creds for cloud function API
 json_account_info = json.loads(service_account_shuffler)
