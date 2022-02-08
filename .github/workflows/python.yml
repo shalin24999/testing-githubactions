@@ -50,7 +50,7 @@ jobs:
 
       - name: Running app verification script
         run : |
-          cd app_verifier/
+          cd ../app_verifier/
           python app_verification.py
         
       
