@@ -15,12 +15,9 @@ username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
 service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
 pr_number = os.environ['PR_NUMBER']
-print(username)
 #Creds for cloud function API
-#json_account_info = json.loads(service_account_shuffler)
-f = open("cred.json", "r")
-print(f.read())
-credentials = service_account.Credentials.from_service_account_file('cred.json')
+json_account_info = json.loads(service_account_shuffler)
+credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
 locations = service.projects().locations().list(name="projects/shuffler").execute()
 
