@@ -13,7 +13,7 @@ from google.oauth2 import service_account
 
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
-service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
+service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER'].replace('\\n', '\n')
 #print(type(service_account_shuffler.encode('unicode_escape')))
 pr_number = os.environ['PR_NUMBER']
 
