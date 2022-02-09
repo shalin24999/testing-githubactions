@@ -53,7 +53,6 @@ jobs:
         run : |
           cd app_verification
           echo ${{ secrets.SERVICE_ACCOUNT_SHUFFLER }} > cred.json
-          EOF
           python app_verifier.py
         
       
