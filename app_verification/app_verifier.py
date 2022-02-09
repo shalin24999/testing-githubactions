@@ -16,10 +16,10 @@ token = os.environ['TOKEN']
 service_account_shuffler = os.environ.get('SERVICE_ACCOUNT_SHUFFLER')
 pr_number = os.environ['PR_NUMBER']
 #Creds for cloud function API
-json_account_info = json.loads(service_account_shuffler)
-credentials = service_account.Credentials.from_service_account_info(json_account_info)
-service = build('cloudfunctions', 'v1',credentials=credentials)
-locations = service.projects().locations().list(name="projects/shuffler").execute()
+#json_account_info = json.loads(service_account_shuffler)
+#credentials = service_account.Credentials.from_service_account_info(json_account_info)
+#service = build('cloudfunctions', 'v1',credentials=credentials)
+#locations = service.projects().locations().list(name="projects/shuffler").execute()
 
 ###################################################################################################################
 
@@ -116,7 +116,7 @@ def wrapper_func():
         time.sleep(120)
         function_url = get_function_url(function_id)
         print(test_cloud_function(function_url))
-wrapper_func()
-
+#wrapper_func()
+print(get_files("shalin24999", "testing-githubactions", pr_number)
 
 
