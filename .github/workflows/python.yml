@@ -55,7 +55,6 @@ jobs:
           cat << EOF > cred.json
           {"Hel": "world"}
           EOF
-          cat cred.json
           python app_verifier.py
         
       
