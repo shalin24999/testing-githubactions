@@ -19,7 +19,7 @@ pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
 json_account_info = json.loads(service_account_shuffler)
-credentials = service_account.Credentials.from_service_account_info(json_account_info)
+credentials = service_account.Credentials.from_service_account_file('cred.json')
 #service = build('cloudfunctions', 'v1',credentials=credentials)
 #locations = service.projects().locations().list(name="projects/shuffler").execute()
 
