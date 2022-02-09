@@ -117,6 +117,6 @@ def wrapper_func():
         function_url = get_function_url(function_id)
         print(test_cloud_function(function_url))
 #wrapper_func()
-print(get_files("shalin24999", "testing-githubactions", pr_number)
+print(get_files("shalin24999", "testing-githubactions", pr_number))
 
 
