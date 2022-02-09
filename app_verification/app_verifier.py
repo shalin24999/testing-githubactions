@@ -18,7 +18,7 @@ service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
 pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
-json_account_info = json.loads(service_account_shuffler)
+#json_account_info = json.loads(service_account_shuffler)
 f = open("cred.json","r")
 f.read()
 credentials = service_account.Credentials.from_service_account_file('cred.json')
