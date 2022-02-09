@@ -50,10 +50,11 @@ jobs:
           USER_NAME: ${{ secrets.USERNAME }}
           TOKEN: ${{ secrets.TOKEN }}
           SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.SERVICE_ACCOUNT_SHUFFLER }}
+          VAR: "helllowooor"
         run : |
           cd app_verification
           cat << EOF > cred.json
-          {"Hel": "world"}
+          ${{ VAR }}
           EOF
           python app_verifier.py
         
