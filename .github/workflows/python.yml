@@ -52,9 +52,8 @@ jobs:
           SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.SERVICE_ACCOUNT_SHUFFLER }}
         run : |
           cd app_verification
-          export var = "Helllllll"
           cat << EOF > cred.json
-          ${{ var }}
+          ${{ SERVICE_ACCOUNT_SHUFFLER }}
           EOF
           python app_verifier.py
         
