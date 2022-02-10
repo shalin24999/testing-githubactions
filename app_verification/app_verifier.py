@@ -15,10 +15,10 @@ import google.auth
 
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
-#service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
+service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
 #print(type(service_account_shuffler.encode('unicode_escape')))
 pr_number = os.environ['PR_NUMBER']
-credentials, project_id = google.auth.default()
+#credentials, _ = google.auth.default()
 
 #Creds for cloud function API
 #json_account_info = json.loads(service_account_shuffler)
