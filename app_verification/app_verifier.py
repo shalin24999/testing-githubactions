@@ -117,9 +117,9 @@ def wrapper_func():
         app_data = parsed_data(app_id)
         function_id = verify_app(app_data)
         print("Waiting for cloud function to be deployed....")
-        time.sleep(120)
+        time.sleep(90)
         function_url = get_function_url(function_id)
-        test_cloud_function(function_url)
+        print(test_cloud_function(function_url))
 wrapper_func()
 
 
