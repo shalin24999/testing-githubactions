@@ -11,14 +11,12 @@ import json
 #Libs and auth
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-import google.auth
 
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
 service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
 #print(type(service_account_shuffler.encode('unicode_escape')))
 pr_number = os.environ['PR_NUMBER']
-#credentials, _ = google.auth.default()
 
 #Creds for cloud function API
 json_account_info = json.loads(fr'{service_account_shuffler}')
@@ -108,7 +106,8 @@ def test_cloud_function(function_url):
         "test":"ok"
     }
     response = requests.post(function_url,json=data)
-    return (response.status_code, response.text())
+    if not response.raise_for_status():
+        return f'Function deployed successfully ! {response.text()}'
 
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
@@ -120,8 +119,7 @@ def wrapper_func():
         print("Waiting for cloud function to be deployed....")
         time.sleep(120)
         function_url = get_function_url(function_id)
-        print(test_cloud_function(function_url))
-#wrapper_func()
-print(get_files("shalin24999", "testing-githubactions", pr_number))
+        test_cloud_function(function_url)
+wrapper_func()
 
 
