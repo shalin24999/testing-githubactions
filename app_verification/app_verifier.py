@@ -21,9 +21,9 @@ pr_number = os.environ['PR_NUMBER']
 #credentials, _ = google.auth.default()
 
 #Creds for cloud function API
-#json_account_info = json.loads(service_account_shuffler)
+json_account_info = json.loads(fr'{service_account_shuffler}')
 #credentials = service_account.Credentials.from_service_account_file('cred.json')
-service = build('cloudfunctions', 'v1',credentials=fr'{service_account_shuffler}')
+service = build('cloudfunctions', 'v1',credentials=json_account_info)
 locations = service.projects().locations().list(name="projects/shuffler").execute()
 
 ###################################################################################################################
