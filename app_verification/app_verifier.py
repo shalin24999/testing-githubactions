@@ -107,7 +107,7 @@ def test_cloud_function(function_url):
     }
     response = requests.post(function_url,json=data)
     if not response.raise_for_status():
-        return f'Function deployed successfully ! {response.text()}'
+        return f'Function deployed successfully ! {response.text}'
 
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
