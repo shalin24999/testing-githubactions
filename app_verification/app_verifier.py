@@ -11,18 +11,17 @@ import json
 #Libs and auth
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-import google.auth
 
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
-#service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
+service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
+shuffle_token = os.environ['SHUFFLE_USER_TOKEN']
 #print(type(service_account_shuffler.encode('unicode_escape')))
 pr_number = os.environ['PR_NUMBER']
-credentials, project_id = google.auth.default()
 
 #Creds for cloud function API
-#json_account_info = json.loads(service_account_shuffler)
-#credentials = service_account.Credentials.from_service_account_file('cred.json')
+json_account_info = json.loads(fr'{service_account_shuffler}')
+credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
 locations = service.projects().locations().list(name="projects/shuffler").execute()
 
@@ -39,7 +38,7 @@ def get_files(owner_name:str, repo_name:str, pr_number:int):
             file_link.append(i['raw_url'])
     return file_link
 
-def get_specs(spec_url,shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
+def get_specs(spec_url,shuffle_token):
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
@@ -50,7 +49,7 @@ def get_specs(spec_url,shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
 app_specs = get_specs("https://raw.githubusercontent.com/Shuffle/openapi-apps/master/jira.yaml")
 
 #validate app and get app_id
-def validate_app(app_specs, shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
+def validate_app(app_specs, shuffle_token):
     validate_url = "https://shuffler.io/api/v1/validate_openapi"
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
@@ -64,7 +63,7 @@ def validate_app(app_specs, shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"
     
 
 #Getting parsed data
-def parsed_data(app_id, shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
+def parsed_data(app_id, shuffle_token):
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
@@ -76,7 +75,7 @@ def parsed_data(app_id, shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
         return save.json()['body']
 
 #Verify app
-def verify_app(app_data, shuffle_token="3fd8c33c-050f-4de4-ae44-e2f9d9d884ac"):
+def verify_app(app_data, shuffle_token):
     verify_app_url = "https://shuffler.io/api/v1/verify_openapi"
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
@@ -108,20 +107,20 @@ def test_cloud_function(function_url):
         "test":"ok"
     }
     response = requests.post(function_url,json=data)
-    return (response.status_code, response.text())
+    if not response.raise_for_status():
+        return f'Function deployed successfully ! {response.text}'
 
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
     for i in specs_url:
-        specs = get_specs(i)
-        app_id = validate_app(specs)
-        app_data = parsed_data(app_id)
-        function_id = verify_app(app_data)
+        specs = get_specs(i,shuffle_token)
+        app_id = validate_app(specs,shuffle_token)
+        app_data = parsed_data(app_id,shuffle_token)
+        function_id = verify_app(app_data,shuffle_token)
         print("Waiting for cloud function to be deployed....")
-        time.sleep(120)
+        time.sleep(90)
         function_url = get_function_url(function_id)
         print(test_cloud_function(function_url))
-#wrapper_func()
-print(get_files("shalin24999", "testing-githubactions", pr_number))
+wrapper_func()
 
 

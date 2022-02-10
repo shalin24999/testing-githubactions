@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request_target:
     types: [opened, reopened]
     branches:
@@ -47,12 +44,6 @@ jobs:
           EOF
           pip install -r requirements.txt
           echo "requirements installed"
-      
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
           
       - name: Running app verification script
         env:
@@ -60,12 +51,9 @@ jobs:
           USER_NAME: ${{ secrets.USERNAME }}
           TOKEN: ${{ secrets.TOKEN }}
           SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SHUFFLE_USER_TOKEN: ${{ secrets.SHUFFLE_USER_TOKEN }}
         run : |
-          echo $credentials_json
           cd app_verification
-          cat << EOF > cred.json
-          echo $credentials_json
-          EOF
           python app_verifier.py
         
       
