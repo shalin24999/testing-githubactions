@@ -21,7 +21,6 @@ jobs:
     - name: Print
       run: |
         echo "Hello"
-        echo ${ github.event.number }
         echo ${{ github.event.number }}
         echo ${ github.event.pull_request.number }
         echo ${{ github.event.pull_request.number }}
