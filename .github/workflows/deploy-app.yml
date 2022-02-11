@@ -1,12 +1,14 @@
-name: App Deployment
 
+name: App Deployment
 on:
   pull_request:
+    branches: 
+      - main
     types: [closed]
-    
+  
 jobs:
   build:
-    if: ${{ github.event.pull_request.merged }}
+    if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest  # windows-latest | macos-latest
     name: App Deployment
     steps:
