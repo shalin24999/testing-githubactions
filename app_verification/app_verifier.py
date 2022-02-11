@@ -46,8 +46,6 @@ def get_specs(spec_url,shuffle_token):
     response = requests.post("https://shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
     return response.text
 
-app_specs = get_specs("https://raw.githubusercontent.com/Shuffle/openapi-apps/master/jira.yaml")
-
 #validate app and get app_id
 def validate_app(app_specs, shuffle_token):
     validate_url = "https://shuffler.io/api/v1/validate_openapi"
