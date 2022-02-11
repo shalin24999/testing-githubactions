@@ -12,6 +12,8 @@ jobs:
           python-version: '3.8' # Version range or exact version of a Python version to use, using SemVer's version range syntax
       - name: Actions Ecosystem Action Get Merged Pull Request
         uses: actions-ecosystem/action-get-merged-pull-request@v1.0.1
+        with:
+          github_token: ${{ secrets.TOKEN }}
       - name : print 
         run: |
           echo ${{ github.event.number }}
