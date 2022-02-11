@@ -1,10 +1,8 @@
 
 name: App Deployment
 on:
-  pull_request:
-    branches: 
-      - main
-    types: [closed]
+  push:
+    branches: ["master"]
   
 jobs:
   build:
