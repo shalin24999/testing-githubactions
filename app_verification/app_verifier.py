@@ -87,7 +87,7 @@ def verify_app(app_data, shuffle_token):
     if not deploy_app.raise_for_status():
         return deploy_app.json()['id'] 
     else:
-        return 'Unable to verify app !!'
+        print('Unable to verify app !!')
 
 #Now we need to make sure that cloud function runs properly once its deployed
 
