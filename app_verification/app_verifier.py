@@ -57,7 +57,8 @@ def validate_app(app_specs, shuffle_token):
     print('App validation -> ',validate_app.status_code)
     if not validate_app.raise_for_status():
         return validate_app.json()['id']
-    return 'Error'
+    else:
+        return 'App validation failed. make sure yaml or json file valid'
     
 
 #Getting parsed data
@@ -71,6 +72,8 @@ def parsed_data(app_id, shuffle_token):
     print('sending full data ->',save.status_code)
     if not save.raise_for_status():
         return save.json()['body']
+    else:
+        return 'File parsing failed.'
 
 #Verify app
 def verify_app(app_data, shuffle_token):
@@ -83,6 +86,8 @@ def verify_app(app_data, shuffle_token):
     print("app verification -> ",deploy_app.status_code)
     if not deploy_app.raise_for_status():
         return deploy_app.json()['id'] 
+    else:
+        return 'Unable to verify app !!'
 
 #Now we need to make sure that cloud function runs properly once its deployed
 
