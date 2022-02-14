@@ -86,29 +86,14 @@ def verify_app(app_data, shuffle_token):
         return deploy_app.json()['id'] 
     return 'Unable to verify app !!'
 
-#Now we need to make sure that cloud function runs properly once its deployed
-
-#It takes some time for cloud function to get deployed so we'll have to wait for it to finish deploying
-def get_function_url(function_id):
+def get_cloud_function(function_id):
     ''' This function will return cloud function url of an open api APP. '''
     functions = service.projects().locations().functions().list(parent="projects/shuffler/locations/-").execute()
     for i in functions.get('functions'):
         name = i.get('name').split('-')
         if function_id == name[-1]:
-            return i.get('httpsTrigger').get('url')
+            return f"Cloud function deployed -> {i.get('name')}"
     raise Exception('Cloud function not found')
-
-#Making API call to deployed cloud function
-def test_cloud_function(function_url):
-    headers = {
-        "Content-Type":"application/json"
-    }
-    data = {
-        "test":"ok"
-    }
-    response = requests.post(function_url,json=data)
-    if not response.raise_for_status():
-        return f'Function deployed successfully ! {response.text}'
 
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
@@ -117,8 +102,8 @@ def wrapper_func():
         app_id = validate_app(specs,shuffle_token)
         app_data = parsed_data(app_id,shuffle_token)
         function_id = verify_app(app_data,shuffle_token)
-        print("Waiting for cloud function to be deployed....")
+        print("Deploying cloudfunction in production....")
         time.sleep(90)
-        function_url = get_function_url(function_id)
-        print(test_cloud_function(function_url))
+        function_details = get_cloud_function(function_id)
+        print(function_details)
 wrapper_func()
