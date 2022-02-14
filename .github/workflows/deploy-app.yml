@@ -26,7 +26,7 @@ jobs:
         pip install -r requirements.txt
         echo "requirements installed"
 
-    - name: Running app verification script
+    - name: Running app deployment script
       env:
         PR_NUMBER: ${{ github.event.number }}
         USER_NAME: ${{ secrets.USERNAME }}
