@@ -1,20 +1,40 @@
+name: Deploy app to gcloud
 
-name: App Deployment
+# only trigger on pull request closed events
 on:
-  push:
-  
+  pull_request:
+    types: [ closed ]
+
 jobs:
-  deploying:
+  merge_job:
+    # this job will only run if the PR has been merged
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-      - name: Actions Ecosystem Action Get Merged Pull Request
-        uses: actions-ecosystem/action-get-merged-pull-request@v1.0.1
-        with:
-          github_token: ${{ secrets.TOKEN }}
-      - name : print 
-        run: |
-          echo ${{ github.event.number }}
-          echo ${{ github.event.issue.number }}
+    - name: Fetching event details
+      env:
+        PR_NUMBER: ${{ github.event.number }} 
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # OR "2" -> To retrieve the preceding commit. 
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+        cache: 'pip'
+    - name : setting up python   
+      run: |
+        cd app_verification
+        pip install -r requirements.txt
+        echo "requirements installed"
+
+    - name: Running app verification script
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+        USER_NAME: ${{ secrets.USERNAME }}
+        TOKEN: ${{ secrets.TOKEN }}
+        SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.GOOGLE_CREDENTIALS }}
+        SHUFFLE_USER_TOKEN: ${{ secrets.SHUFFLE_USER_TOKEN }}
+      run : |
+        cd app_verification
+        python app_deploy.py    
+  
