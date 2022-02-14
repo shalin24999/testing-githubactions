@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: testing app
+  description: delete this app.does nothing. testing
+  version: "1.0"
+  x-logo: ""
+  contact:
+    name: "@frikkylikeme"
+    url: https://twitter.com/frikkylikeme
+    email: frikky@shuffler.io
+servers:
+  - url: https://api.example.com
+host: api.example.com
+basePath: /
+schemes:
+  - "https:"
+paths:
+  /hello:
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ""
+      summary: hello
+      operationId: hello
+      description: ""
+      parameters: []
+      requestBody:
+        content: {}
+components:
+  securitySchemes: {}
