@@ -31,6 +31,7 @@ jobs:
           TOKEN: ${{ secrets.TOKEN }}
           SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.GOOGLE_CREDENTIALS }}
           SHUFFLE_USER_TOKEN: ${{ secrets.SHUFFLE_USER_TOKEN }}
+          SANDBOX_USER_TOKEN: ${{ secrets.SANDBOX_USER_TOKEN }}
         run : |
           cd app_verification
           python app_verifier.py
