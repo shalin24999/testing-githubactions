@@ -12,11 +12,11 @@ import json
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
+#Add shuffle-sandbox service account and token
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
 service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
 shuffle_token = os.environ['SHUFFLE_USER_TOKEN']
-#print(type(service_account_shuffler.encode('unicode_escape')))
 pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
@@ -43,12 +43,12 @@ def get_specs(spec_url,shuffle_token):
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
     }
-    response = requests.post("https://shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
+    response = requests.post("https://sandbox.shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
     return response.text
 
 #validate app and get app_id
 def validate_app(app_specs, shuffle_token):
-    validate_url = "https://shuffler.io/api/v1/validate_openapi"
+    validate_url = "https://sandbox.shuffler.io/api/v1/validate_openapi"
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
@@ -66,7 +66,7 @@ def parsed_data(app_id, shuffle_token):
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
     }
-    full_data = f"https://shuffler.io/api/v1/get_openapi/{str(app_id)}"
+    full_data = f"https://sandbox.shuffler.io/api/v1/get_openapi/{str(app_id)}"
     save = requests.get(full_data,headers=headers)
     print('sending full data ->',save.status_code)
     if not save.raise_for_status():
@@ -75,7 +75,7 @@ def parsed_data(app_id, shuffle_token):
 
 #Verify app
 def verify_app(app_data, shuffle_token):
-    verify_app_url = "https://shuffler.io/api/v1/verify_openapi"
+    verify_app_url = "https://sandbox.shuffler.io/api/v1/verify_openapi"
     headers = {
         "Authorization":f"Bearer {shuffle_token}",
         "Content-Type":"application/json"
@@ -90,8 +90,9 @@ def verify_app(app_data, shuffle_token):
 
 #It takes some time for cloud function to get deployed so we'll have to wait for it to finish deploying
 def get_function_url(function_id):
+    ######################### fix this for sandbox ########################
     ''' This function will return cloud function url of an open api APP. '''
-    functions = service.projects().locations().functions().list(parent="projects/shuffler/locations/-").execute()
+    functions = service.projects().locations().functions().list(parent="projects/shuffle-sandbox-337810/locations/-").execute()
     for i in functions.get('functions'):
         name = i.get('name').split('-')
         if function_id == name[-1]:
