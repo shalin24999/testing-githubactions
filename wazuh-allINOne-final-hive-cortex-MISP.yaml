@@ -1,0 +1,1600 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provides  distributed Wazuh installation 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - AvailabilityZone
+      - InstanceType
+      - KeyName
+      - WazuhVersion 
+      - LogFile
+      - IAMUserSSHAccess
+      - SystemsManagerAccess
+      - LogsRetentionInDays
+      - WZUHVolumeSizes
+      - HiveCortexVolumeSize
+      - MISPVolumeSize
+      - SSLCertificateARN
+Parameters:
+  InstanceType:
+    AllowedValues:
+    - t3a.small
+    - t3a.medium
+    - t3a.large
+    - t3a.xlarge
+    - r5a.xlarge
+    - r5a.2xlarge
+    - r5a.4xlarge
+    - r5a.8xlarge
+    - m5a.large
+    - m5a.xlarge
+    - m5a.2xlarge
+    - m5a.4xlarge
+    - m5a.8xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+    Default: t3a.large
+    Description: EC2 instance type
+    Type: String
+  AvailabilityZone:
+    Description: Select an availability zone for the VPC
+    Type: 'List<AWS::EC2::AvailabilityZone::Name>'
+  KeyName:
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+  WazuhVersion:
+    AllowedValues:
+      # - "v4.0.1"
+      # - "v4.0.2"
+      # - "v4.0.3"
+      # - "v4.0.4"
+      # - "v4.1.0"
+      - "v4.1.1"
+    Description: Wazuh version
+    Default: "v4.1.1"
+    Type: String
+  LogFile:
+    Description: Log file path to keep track of actions
+    Type: String  
+    Default: /var/log/wazuh-cloudformation.log
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access.'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  WZUHVolumeSizes:
+    Description: 'Specifies the number of WZUH VolumeSize.'
+    Type: Number
+    Default: 8
+    AllowedValues: [8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 1024]
+  HiveCortexVolumeSize:
+    Description: 'Specifies the number of Hive-Cortex VolumeSize.'
+    Type: Number
+    Default: 8
+    AllowedValues: [8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 1024]  
+  MISPVolumeSize:
+    Description: 'Specifies the number of MISP VolumeSize.'
+    Type: Number
+    Default: 8
+    AllowedValues: [8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 1024]
+  SystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
+    AllowedValues:
+    - true
+    - false
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on alert.yaml template.'
+    Type: String
+    Default: ''
+  SSLCertificateARN:
+    Description: 'Used for HTTPS access to WUI. Existent certificate, identified by its Amazon Resource Name (ARN).'
+    Type: String
+Mappings:
+  Node2NameAndIP:
+    Elastic1:
+      Name: elastic-node-1
+      IP: 10.0.1.101
+    Elastic2:
+      Name: elastic-node-2
+      IP: 10.0.1.102
+    Elastic3:
+      Name: elastic-node-3
+      IP: 10.0.1.103
+  AWSInstanceType2Arch:
+    t3a.large:
+      Arch: HVM64
+    t3a.medium:
+      Arch: HVM64
+    t3a.micro:
+      Arch: HVM64
+    t3a.xlarge:
+      Arch: HVM64
+    t3a.small:
+      Arch: HVM64
+    r5a.large:
+      Arch: HVM64
+    r5a.xlarge:
+      Arch: HVM64
+    r5a.2xlarge:
+      Arch: HVM64
+    r5a.4xlarge:
+      Arch: HVM64
+    r5a.8xlarge:
+      Arch: HVM64
+    m5a.large:
+      Arch: HVM64
+    m5a.xlarge:
+      Arch: HVM64
+    m5a.2xlarge:
+      Arch: HVM64
+    m5a.4xlarge:
+      Arch: HVM64
+    m5a.8xlarge:
+      Arch: HVM64
+
+  AWSRegionArch2AMI:
+    us-east-1:
+      HVM64: ami-0c2b8ca1dad447f8a
+    us-east-2:
+      HVM64: ami-0443305dabd4be2bc
+    us-west-1:
+      HVM64: ami-04b6c97b14c54de18
+    us-west-2:
+      HVM64: ami-083ac7c7ecf9bb9b0
+    ap-south-1:
+      HVM64: ami-04db49c0fb2215364
+    eu-west-3: 
+      HVM64: ami-0d49cec198762b78c
+    eu-west-2: 
+      HVM64: ami-0d26eb3972b7f8c96
+    eu-north-1:
+      HVM64: ami-0d441f5643da997cb
+    eu-west-1:
+      HVM64: ami-02b4e72b17337d6c1
+    ap-northeast-2:
+      HVM64: ami-0a0de518b1fc4524c
+    ap-northeast-3:
+      HVM64: ami-0e787554e61105680  
+    ap-northeast-1:
+      HVM64: ami-09ebacdc178ae23b7
+    sa-east-1:
+      HVM64: ami-0f8243a5175208e08
+    ca-central-1:
+      HVM64: ami-02f84cf47c23f1769
+    ap-southeast-1:
+      HVM64: ami-0f511ead81ccde020
+    ap-southeast-2:
+      HVM64: ami-0aab712d6363da7f9
+    eu-central-1:
+      HVM64: ami-0453cb7b5f2b7fca2
+
+  AWSRegionubuntu2AMI:
+    us-east-1:
+      HVM64: ami-09e67e426f25ce0d7
+    us-east-2:
+      HVM64: ami-00399ec92321828f5
+    us-west-1:
+      HVM64: ami-0d382e80be7ffdae5
+    us-west-2:
+      HVM64: ami-03d5c68bab01f3496
+    ap-south-1:
+      HVM64: ami-0c1a7f89451184c8b
+    eu-west-3: 
+      HVM64: ami-0f7cd40eac2214b37
+    eu-west-2: 
+      HVM64: ami-0194c3e07668a7e36
+    eu-north-1:
+      HVM64: ami-0ff338189efb7ed37
+    eu-west-1:
+      HVM64: ami-0a8e758f5e873d1c1
+    ap-northeast-2:
+      HVM64: ami-04876f29fd3a5e8ba
+    ap-northeast-3:
+      HVM64: ami-0001d1dd884af8872  
+    ap-northeast-1:
+      HVM64: ami-0df99b3a8349462c6
+    sa-east-1:
+      HVM64: ami-054a31f1b3bf90920
+    ca-central-1:
+      HVM64: ami-0801628222e2e96d6
+    ap-southeast-1:
+      HVM64: ami-0d058fe428540cd89
+    ap-southeast-2:
+      HVM64: ami-0567f647e75c7bc05
+    eu-central-1:
+      HVM64: ami-05f7491af5eef733a
+
+  Subnet2CIDR:
+    WazuhVpc:
+      CIDR: 10.0.0.0/16
+    SubnetWazuh:
+      CIDR: 10.0.0.0/24
+    SubnetElasticsearch:
+      CIDR: 10.0.1.0/24
+    wazuNatSubnet:
+      CIDR: 10.0.3.0/24
+    publicSubnet1:
+      CIDR: 10.0.4.0/24
+    publicSubnet2:
+      CIDR: 10.0.5.0/24 
+
+Conditions:
+  HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasSslCert: !Not [!Equals [!Ref SSLCertificateARN, ""]]
+Resources:  
+  # Network resources
+  WazuhVpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !FindInMap
+        - Subnet2CIDR
+        - WazuhVpc
+        - CIDR
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Ref 'AWS::StackName'
+
+  SubnetWazuh:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref WazuhVpc
+      AvailabilityZone: !Select [ "0", !Ref AvailabilityZone ]
+      CidrBlock: !FindInMap
+        - Subnet2CIDR
+        - SubnetWazuh
+        - CIDR
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SubnetWazuh'
+
+  SubnetElasticsearch:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref WazuhVpc
+      AvailabilityZone: !Select [ "1", !Ref AvailabilityZone ]
+      CidrBlock: !FindInMap
+        - Subnet2CIDR
+        - SubnetElasticsearch
+        - CIDR
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SubnetElasticsearch'
+  publicSubnet1:
+      Type: 'AWS::EC2::Subnet'
+      Properties:
+        VpcId: !Ref WazuhVpc
+        AvailabilityZone: !Select [ "0", !Ref AvailabilityZone ]
+        CidrBlock: !FindInMap
+          - Subnet2CIDR
+          - publicSubnet1
+          - CIDR
+        Tags:
+          - Key: Application
+            Value: !Ref 'AWS::StackId'
+          - Key: Name
+            Value: !Sub '${AWS::StackName}-publicSubnet1'
+  publicSubnet2:
+      Type: 'AWS::EC2::Subnet'
+      Properties:
+        VpcId: !Ref WazuhVpc
+        AvailabilityZone: !Select [ "1", !Ref AvailabilityZone ]
+        CidrBlock: !FindInMap
+          - Subnet2CIDR
+          - publicSubnet2
+          - CIDR
+        Tags:
+          - Key: Application
+            Value: !Ref 'AWS::StackId'
+          - Key: Name
+            Value: !Sub '${AWS::StackName}-publicSubnet2'
+  SubnetNAT:
+      Type: 'AWS::EC2::Subnet'
+      Properties:
+        VpcId: !Ref WazuhVpc
+        AvailabilityZone: !Select [ "2", !Ref AvailabilityZone ]
+        CidrBlock: !FindInMap
+          - Subnet2CIDR
+          - wazuNatSubnet
+          - CIDR
+        Tags:
+          - Key: Application
+            Value: !Ref 'AWS::StackId'
+          - Key: Name
+            Value: !Sub '${AWS::StackName}-SubnetNAT'  
+  # Internet access and routing
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-InternetGateway'
+  
+  GatewayToInternet:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref WazuhVpc
+      InternetGatewayId: !Ref InternetGateway
+  # Nat configuration
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayToInternet
+    Properties:
+      Domain: vpc
+
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref SubnetNAT
+
+
+  
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref WazuhVpc
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicRouteTable'
+  
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: GatewayToInternet
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetPublic1RouteTable:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref publicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+  SubnetPublic2PublicRouteTable:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref publicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+  
+ # NAT routing 
+  NATRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref WazuhVpc
+      Tags:
+        - Key: Name
+          Value: NATRoutes
+
+  DefaultNATRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayToInternet
+    Properties:
+      RouteTableId: !Ref NATRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    
+  NATSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref NATRouteTable
+      SubnetId: !Ref SubnetNAT
+
+  # Private Rouetables
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref WazuhVpc
+      Tags:
+        - Key: Name
+          Value: PrivateRoutes(AZ1)
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref SubnetWazuh
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref WazuhVpc
+      Tags:
+        - Key: Name
+          Value: PrivateRoutes(AZ2)
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref SubnetElasticsearch
+
+  # Security groups
+
+  ElasticSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Elasticsearch security group
+      VpcId: !Ref WazuhVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9200
+          ToPort: 9200
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9400
+          ToPort: 9400
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 55000
+          ToPort: 55000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1514
+          ToPort: 1516
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-ElasticSecurityGroup'
+  # Hive-Cortex SecurityGroup
+  HiveCortexSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Hive-Cortex security group
+      VpcId: !Ref WazuhVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: tcp
+          FromPort: 9000
+          ToPort: 9000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9001
+          ToPort: 9001
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Hive-CortexSecurityGroup'    
+  # MISP SecurityGroup
+  MISPSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: MISP security group
+      VpcId: !Ref WazuhVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !FindInMap
+            - Subnet2CIDR
+            - WazuhVpc
+            - CIDR
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-MISPSecurityGroup'       
+  # RDPY SecurityGroup
+  rdpySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: RDPY security group
+      VpcId: !Ref WazuhVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-rdpySecurityGroup'
+  # Dionaea SecurityGroup    
+  DionaeaSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Dionaea security group
+      VpcId: !Ref WazuhVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 21
+          ToPort: 21
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 42
+          ToPort: 42
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 69
+          ToPort: 69
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 135
+          ToPort: 135
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 445
+          ToPort: 445
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1433
+          ToPort: 1433
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1723
+          ToPort: 1723
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1883
+          ToPort: 1883
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1883
+          ToPort: 1883
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 1900
+          ToPort: 1900
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5060
+          ToPort: 5060
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 5060
+          ToPort: 5060
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5061
+          ToPort: 5061
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 11211
+          ToPort: 11211
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-DionaeaSecurityGroup'
+  Logs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: wazuh
+      RetentionInDays: !Ref LogsRetentionInDays
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
+      - PolicyName: 'ec2'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:AssociateAddress'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeVolumeStatus'
+            - 'ec2:DescribeTags'
+            - 'ec2:DescribeVolumes'
+            - 'cloudwatch:GetMetricStatistics'
+            - 'cloudwatch:ListMetrics'
+            - 'cloudwatch:PutMetricData'
+            - 'cloudformation:DescribeStackResources'
+            - 'cloudformation:DescribeStackResource'
+            - 'cloudformation:DescribeStacks'
+            - 'cloudformation:ListStackResources'
+            - 'elasticloadbalancing:Describe*'
+            Resource:
+            - '*'
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            Resource: !GetAtt 'Logs.Arn'
+  IAMPolicySSHAccess:
+    Type: 'AWS::IAM::Policy'
+    Condition: HasIAMUserSSHAccess
+    Properties:
+      Roles:
+      - !Ref IAMRole
+      PolicyName: iam
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'iam:ListUsers'
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - 'iam:ListSSHPublicKeys'
+          - 'iam:GetSSHPublicKey'
+          Resource:
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+      - !Ref IAMRole
+  WazuhAIO:
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: InstanceType
+          - Arch
+      InstanceType:
+        Ref: InstanceType
+      KeyName:
+        Ref: KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "false"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "ElasticSecurityGroup"
+          SubnetId:
+            Ref: "SubnetElasticsearch"
+          PrivateIpAddress: !FindInMap [Node2NameAndIP, Elastic1, IP]
+      Tags:
+        - Key: Name
+          Value: Wazuh
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref WZUHVolumeSizes
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "Downloading script..." > ${LogFile} 
+          curl -so ~/all-in-one-installation.sh  https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/all-in-one-installation/all-in-one-installation-${WazuhVersion}.sh  
+          echo "Installing script..." > ${LogFile}
+          yum install amazon-cloudwatch-agent -y > ${LogFile}
+          curl -so /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/CloudWatch/amazon-cloudwatch-agent.json
+          systemctl restart amazon-cloudwatch-agent > ${LogFile}
+          curl -so /opt/authorized_keys_command.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/authorized_keys_command.sh
+          chmod 000755  /opt/authorized_keys_command.sh 
+          curl -so /opt/import_users.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/import_users.sh    
+          chmod 000755  /opt/import_users.sh
+          curl -so /etc/cron.d/import_users https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/import_users
+          chmod 000644 /etc/cron.d/import_users
+          sed -e ''/AuthorizedKeysCommand / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommand /opt/authorized_keys_command.sh'' >> /etc/ssh/sshd_config 
+          ! grep -q ''^AuthorizedKeysCommand /opt/authorized_keys_command.sh'' /etc/ssh/sshd_config
+          sed -e ''/AuthorizedKeysCommandUser / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommandUser nobody'' >> /etc/ssh/sshd_config
+          ! grep -q ''^AuthorizedKeysCommandUser nobody'' /etc/ssh/sshd_config
+          bash /opt/import_users.sh > ${LogFile}
+          systemctl restart sshd
+          bash ~/all-in-one-installation.sh > ${LogFile}
+          curl -so all-dash.ndjson https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/wazuh-all-dashboard/all-dash.ndjson && curl -X POST "https://localhost/api/saved_objects/_import?createNewCopies=true" -u admin:admin -H "kbn-xsrf: true" --form file=@all-dash.ndjson --insecure 
+          curl -so ~/wazuh_shuffle.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/all-in-one-installation/wazuh_shuffle.sh
+          bash ~/wazuh_shuffle.sh > ${LogFile}
+    Type: AWS::EC2::Instance
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref WazuhAIO
+  SystemStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'SystemStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref WazuhAIO
+  InstanceStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'InstanceStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_Instance
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref WazuhAIO
+  HiveCortex:
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: InstanceType
+          - Arch
+      InstanceType:
+        Ref: InstanceType
+      KeyName:
+        Ref: KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "false"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "HiveCortexSecurityGroup"
+          SubnetId:
+            Ref: "SubnetElasticsearch"
+          PrivateIpAddress: !FindInMap [Node2NameAndIP, Elastic2, IP]
+      Tags:
+        - Key: Name
+          Value: HiveCortex
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref HiveCortexVolumeSize
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "Downloading script..." > ${LogFile} 
+          curl -so ~/all-in-one-installation.sh  https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/hive-cortex/hive-cortex-final.sh  
+          echo "Installing script..." > ${LogFile}
+          yum install amazon-cloudwatch-agent -y > ${LogFile}
+          curl -so /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/CloudWatch/amazon-cloudwatch-agent.json
+          systemctl restart amazon-cloudwatch-agent > ${LogFile}
+          curl -so /opt/authorized_keys_command.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/authorized_keys_command.sh
+          chmod 000755  /opt/authorized_keys_command.sh 
+          curl -so /opt/import_users.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/import_users.sh    
+          chmod 000755  /opt/import_users.sh
+          curl -so /etc/cron.d/import_users https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/wazuh-all-in-one/SSH-SSM/import_users
+          chmod 000644 /etc/cron.d/import_users
+          sed -e ''/AuthorizedKeysCommand / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommand /opt/authorized_keys_command.sh'' >> /etc/ssh/sshd_config 
+          ! grep -q ''^AuthorizedKeysCommand /opt/authorized_keys_command.sh'' /etc/ssh/sshd_config
+          sed -e ''/AuthorizedKeysCommandUser / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommandUser nobody'' >> /etc/ssh/sshd_config
+          ! grep -q ''^AuthorizedKeysCommandUser nobody'' /etc/ssh/sshd_config
+          bash /opt/import_users.sh > ${LogFile}
+          systemctl restart sshd
+          chmod 000755 ~/all-in-one-installation.sh
+          bash ~/all-in-one-installation.sh > ${LogFile}
+          curl -so ~/hive_shuffle.sh https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/hive-cortex/hive_shuffle.sh
+          bash ~/hive_shuffle.sh > ${LogFile}
+    Type: AWS::EC2::Instance
+  CPUHiveCortexTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref HiveCortex
+  SystemHiveCortexStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'SystemStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref HiveCortex
+  InstanceHiveCortexStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'InstanceStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_Instance
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref HiveCortex
+  MISPAIO:
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionubuntu2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: InstanceType
+          - Arch
+      InstanceType:
+        Ref: InstanceType
+      KeyName:
+        Ref: KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "false"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "MISPSecurityGroup"
+          SubnetId:
+            Ref: "SubnetElasticsearch"
+          PrivateIpAddress: !FindInMap [Node2NameAndIP, Elastic3, IP]
+      Tags:
+        - Key: Name
+          Value: MISP
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref MISPVolumeSize
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "Downloading script..." > ${LogFile} 
+          curl -so ~/all-in-one-installation.sh  https://wazuh-deployment-infopercept.s3.ap-south-1.amazonaws.com/MISP/misp-ubuntu_new-updated.sh 
+          apt-get update
+          apt install awscli
+          chmod 000755 ~/all-in-one-installation.sh
+          echo "Installing script..." > ${LogFile}
+          bash ~/all-in-one-installation.sh > ${LogFile}
+          echo "Chnage Endpoint in config.php"
+          TAG_NAME="aws:cloudformation:stack-name"
+          INSTANCE_ID="`wget -qO- http://instance-data/latest/meta-data/instance-id`"
+          REGION="`wget -qO- http://instance-data/latest/meta-data/placement/availability-zone | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
+          TAG_VALUE="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$TAG_NAME" --region $REGION --output=text | cut -f5`"
+          ELB_ARN="`aws cloudformation describe-stack-resources --region $REGION --stack-name $TAG_VALUE | grep "loadbalancer" > elb.txt`"
+          ELB_ARN2=$(awk '{ print $2 }' elb.txt | sed 's/"/ /g' | sed 's/,/ /g')
+          ENDPOINT="`aws elbv2 describe-load-balancers --load-balancer-arns $ELB_ARN2 --region $REGION --output=text | cut -f4`"
+          SRC="10.0.1.103"; 
+          DST=$ENDPOINT:8081;
+          find /var/www/MISP/app/Config/ -type f -name "config.php" -exec sed -i 's,'"$SRC"','"$DST"',' {} \;
+    Type: AWS::EC2::Instance
+  MISPCPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref MISPAIO
+  MISPSystemStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'SystemStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref MISPAIO
+  MISPInstanceStatusAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'InstanceStatus over last 0 to 1.'
+      Namespace: 'AWS/EC2'
+      MetricName: StatusCheckFailed_Instance
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref MISPAIO
+  # Wazuh Network Load Balancer
+  WazuhNetworkLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${AWS::StackName}-Wazuh'
+      Scheme: internet-facing
+      Subnets:
+        - !Ref publicSubnet1
+        - !Ref publicSubnet2
+      Type: network
+      LoadBalancerAttributes:
+      - Key: load_balancing.cross_zone.enabled
+        Value: true
+      Tags:
+        - Key: Name
+          Value: nlbwazuh
+
+
+  # Wazuh registration Target Group for Network Load Balancer
+  RegistrationTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-registrationTG'
+      Port: 1515
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref WazuhAIO
+        Port:  1515
+      Tags:
+        - Key: Name
+          Value: registrationTG
+
+  # TLS Target Group for Network Load Balancer
+  TLSTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasSslCert
+    Properties:
+      Name: !Sub '${AWS::StackName}-TLSTargetGroup'
+      Port: 443
+      Protocol: TLS
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref WazuhAIO
+        Port: 443
+      Tags:
+        - Key: Name
+          Value: TLSTargetGroup
+
+  # Wazuh registration Listener for Network Load Balancer
+  RegistrationListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref RegistrationTG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port:  1515
+      Protocol: TCP
+
+  # # Reporting Target Group for Wazuh master and worker nodes
+  ReportingTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-reportingTG'
+      Port: 1514
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref WazuhAIO
+        Port: 1514
+      Tags:
+        - Key: Name
+          Value: reportingTG
+
+  # Reporting Listener for Network LB.
+  ReportingListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ReportingTG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port: 1514
+      Protocol: TCP
+
+  # Listener for Kibana WUI
+  TLSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: HasSslCert
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref TLSTargetGroup
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port: 443
+      Protocol: TLS
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
+      Certificates:
+      - CertificateArn: !Ref SSLCertificateARN
+  # Wazuh Hive-Cortex Listener for Network Load Balancer
+  HiveListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref HiveTG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port:  9000
+      Protocol: TCP
+
+  # Hive-Cortex Target Group for Wazuh 
+  HiveTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-HiveTG'
+      Port: 9000
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref HiveCortex
+        Port: 9000
+      Tags:
+        - Key: Name
+          Value: HiveCortexTG
+  # Cortex Target For Network LB.
+
+  CortexTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-CortexTG'
+      Port: 9001
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref HiveCortex
+        Port:  9001
+      Tags:
+        - Key: Name
+          Value: Cortex
+  # Cortex Listener for Network LB.
+  CortexListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref CortexTG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port: 9001
+      Protocol: TCP
+  # Wazuh API Listener for Network Load Balancer
+  APIistener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref APITG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port:  55000
+      Protocol: TCP
+
+  # API Target Group for Wazuh 
+  APITG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-APITG'
+      Port: 55000
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref WazuhAIO
+        Port: 55000
+      Tags:
+        - Key: Name
+          Value: APITG
+  #MISP Target Group for Wazuh MISP
+  MISPTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-MISPTG'
+      Port: 8080
+      Protocol: TCP
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref MISPAIO
+        Port: 80
+      Tags:
+        - Key: Name
+          Value: MISPTG
+
+  # MISP Listener for Network LB.
+  MISPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref MISPTG
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port: 8080
+      Protocol: TCP
+
+  # MISPTLS Target Group for Network Load Balancer
+  MISPTLSTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasSslCert
+    Properties:
+      Name: !Sub '${AWS::StackName}-MISPTLSTargetGroup'
+      Port: 8081
+      Protocol: TLS
+      VpcId: !Ref WazuhVpc
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 600
+      Targets:
+      - Id: !Ref MISPAIO
+        Port: 443
+      Tags:
+        - Key: Name
+          Value: MISPTLSTargetGroup
+  # Listener for MISP WUI
+  MISPTLSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: HasSslCert
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref MISPTLSTargetGroup
+      LoadBalancerArn: !Ref WazuhNetworkLoadBalancer
+      Port: 8081
+      Protocol: TLS
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
+      Certificates:
+      - CertificateArn: !Ref SSLCertificateARN
+
+
+  # deception FARGATE
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Join ['', [Deception, Cluster]]
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 0
+          Base: 0
+        - CapacityProvider: FARGATE_SPOT
+          Base: 1
+          Weight: 1
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+  DionaeaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, Dionaea, TaskDefinition]]
+  RDPYLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, rdpy, TaskDefinition]]
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: DionaeaLogGroup
+    Properties:
+      Family: !Join ['', [Dionaea, TaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: Dionaea
+          Image: kkpkishan/dionaea:v1
+          PortMappings:
+            - ContainerPort: 21
+              Protocol: tcp
+            - ContainerPort: 42 
+              Protocol: tcp
+            - ContainerPort: 69
+              Protocol: udp
+            - ContainerPort: 80
+              Protocol: tcp
+            - ContainerPort: 135
+              Protocol: tcp
+            - ContainerPort: 443
+              Protocol: tcp
+            - ContainerPort: 445
+              Protocol: tcp
+            - ContainerPort: 1433
+              Protocol: tcp
+            - ContainerPort: 1723
+              Protocol: tcp
+            - ContainerPort: 1883
+              Protocol: tcp
+            - ContainerPort: 1900
+              Protocol: udp
+            - ContainerPort: 3306
+              Protocol: tcp
+            - ContainerPort: 5060
+              Protocol: tcp
+            - ContainerPort: 5060
+              Protocol: udp
+            - ContainerPort: 11211
+              Protocol: tcp
+          Environment:
+            - Name: ip
+              Value: 10.0.1.101
+            - Name: user
+              Value: admin
+            - Name: password
+              Value: admin
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref DionaeaLogGroup
+              awslogs-stream-prefix: ecs
+  # A role needed by ECS
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [Dionaea, ExecutionRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+  # A role for the containers  
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [Dionaea, TaskRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+  rdpyTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+
+    DependsOn: RDPYLogGroup
+    Properties:
+      Family: !Join ['', [rdpy, rdpyTaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2GB
+      ExecutionRoleArn: !Ref rdpyExecutionRole
+      TaskRoleArn: !Ref rdpyTaskRole
+      ContainerDefinitions:
+        - Name: rdpy
+          Image: kkpkishan/rdpy:v1
+          PortMappings:
+            - ContainerPort: 3389
+              Protocol: tcp
+          Environment:
+            - Name: ip
+              Value: 10.0.1.101
+            - Name: user
+              Value: admin
+            - Name: password
+              Value: admin
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref RDPYLogGroup
+              awslogs-stream-prefix: ecs
+  rdpyExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [rdpy, rdpyExecutionRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+  rdpyTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [rdpy, rdpyTaskRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'  
+  Service:
+    Type: AWS::ECS::Service
+    # This dependency is needed so that the load balancer is setup correctly in time
+    DependsOn:
+      - WazuhAIO
+    Properties: 
+      ServiceName: Dionaea
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      # This may need to be adjusted if the container takes a while to start up
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          # change to DISABLED if you're using private subnets that have access to a NAT gateway
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref SubnetWazuh
+            - !Ref SubnetElasticsearch
+          SecurityGroups:
+            - !Ref DionaeaSecurityGroup
+  rdpyService:
+    Type: AWS::ECS::Service
+    # This dependency is needed so that the load balancer is setup correctly in time
+    DependsOn:
+      - WazuhAIO
+    Properties: 
+      ServiceName: rdpy
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref rdpyTaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref SubnetWazuh
+            - !Ref SubnetElasticsearch
+          SecurityGroups:
+            - !Ref rdpySecurityGroup
+Outputs:
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  KibanaURL:
+    Description: A reference to the access Kibana
+    Value: !Sub https://${WazuhNetworkLoadBalancer.DNSName}
+    Export:
+      Name: !Sub '${AWS::StackName}-KibanaURL'
+  HiveURL:
+    Description: A reference to the access Hive
+    Value: !Sub http://${WazuhNetworkLoadBalancer.DNSName}:9000
+    Export:
+      Name: !Sub '${AWS::StackName}-HiveURL'
+  CortexURL:
+    Description: A reference to the access Cortex
+    Value: !Sub http://${WazuhNetworkLoadBalancer.DNSName}:9001
+    Export:
+      Name: !Sub '${AWS::StackName}-CortexURL'
+  MISPURL:
+    Description: A reference to the access MISP
+    Value: !Sub https://${WazuhNetworkLoadBalancer.DNSName}:8081
+    Export:
+      Name: !Sub '${AWS::StackName}-MISPURL'
+  WazuhReporting:
+    Description: A reference to the access WazuhAIO,WazuhAIO
+    Value: !Sub ${WazuhNetworkLoadBalancer.DNSName}:1514
+    Export:
+      Name: !Sub '${AWS::StackName}-WazuhReporting'
+  WazuhRegistration:
+    Description: A reference to the access WazuhAIO
+    Value: !Sub ${WazuhNetworkLoadBalancer.DNSName}:1515
+    Export:
+      Name: !Sub '${AWS::StackName}-WazuhRegistration'
+  WazuhAPI:
+    Description: A reference to the access WazuhAIO
+    Value: !Sub ${WazuhNetworkLoadBalancer.DNSName}:55000
+    Export:
+      Name: !Sub '${AWS::StackName}-WazuhAPI'
+  WazuhIp:
+    Description: Wazuh Server Private IP
+    Value: !GetAtt WazuhAIO.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-WazuhIp"
+  HiveCortexIp:
+    Description: HiveCortex Server Private IP
+    Value: !GetAtt HiveCortex.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-HiveCortexIp"
+  MISPIp:
+    Description: MISP Server Private IP
+    Value: !GetAtt MISPAIO.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-MISPIp"
