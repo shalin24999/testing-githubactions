@@ -1,0 +1,737 @@
+openapi: 3.0.0
+info:
+  title: Domo
+  description: |
+    Supports Dataset API and Page API
+  version: "1.0"
+  x-logo: data:image/png;base64,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
+  contact:
+    name: "@frikkylikeme"
+    url: https://twitter.com/frikkylikeme
+    email: frikky@shuffler.io
+servers:
+  - url: https://api.domo.com/v1
+host: api.domo.com
+basePath: /v1
+schemes:
+  - "https:"
+paths:
+  "/datasets/{dataset_id}":
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
+
+                  {
+                    "id": "08a061e2-12a2-4646-b4bc-20beddb403e3",
+                    "name": "Timeline Feed",
+                    "description": "Important",
+                    "rows": 1,
+                    "columns": 6,
+                    "schema": {
+                      "columns": [ {
+                        "type": "STRING",
+                        "name": "Name"
+                      } ]
+                    },
+                    "createdAt": "2015-12-10T07:06:14Z",
+                    "updatedAt": "2016-02-29T20:56:20.567Z",
+                    "pdpEnabled": false,
+                    "policies": [ {
+                      "id": 8,
+                      "type": "user",
+                      "name": "Only Show Attendees",
+                      "filters": [ {
+                        "column": "Attending",
+                        "values": [ "TRUE" ],
+                        "operator": "EQUALS",
+                        "not": false
+                      } ],
+                      "users": [ 27 ],
+                      "groups": [ ]
+                    } ]
+                  }
+      summary: Retrieve a DataSet
+      operationId: Retrieve_a_DataSet
+      description: Retrieves the details of an existing DataSet
+      parameters:
+        - in: path
+          name: dataset_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        content: {}
+    delete:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: HTTP/1.1 204 No Content
+      summary: Delete a DataSet
+      operationId: Delete_a_DataSet
+      description: Permanently deletes a DataSet from your Domo instance. This can be
+        done for all DataSets, not just those created through the API.
+      parameters:
+        - in: path
+          name: dataset_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content: {}
+  "/datasets/query/execute/{dataset_id}":
+    post:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: >-
+                  HTTP/1.1 200 OK
+
+                  Content-Type: application/json
+
+
+                  {
+                      "datasource": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                      "columns": [
+                          "Description",
+                          "% of Inventory Value",
+                          "Cost",
+                          "Total Inventory Value",
+                          "_BATCH_ID_",
+                          "_BATCH_LAST_RUN_"
+                      ],
+                      "metadata": [
+                          {
+                              "type": "STRING",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          },
+                          {
+                              "type": "DOUBLE",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          },
+                          {
+                              "type": "LONG",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          },
+                          {
+                              "type": "LONG",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          },
+                          {
+                              "type": "DOUBLE",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          },
+                          {
+                              "type": "DATETIME",
+                              "dataSourceId": "ce79d23f-ef7d-4318-9787-ebde54a8c5b4",
+                              "maxLength": -1,
+                              "minLength": -1,
+                              "periodIndex": 0
+                          }
+                      ],
+                      "rows": [
+                          [
+                              "Maintenance",
+                              0.0035,
+                              35000,
+                              10000000,
+                              410,
+                              "2019-03-19T18:49:02"
+                          ],
+                          [
+                              "Labor",
+                              0.007,
+                              70000,
+                              10000000,
+                              410,
+                              "2019-03-19T18:49:02"
+                          ],
+                          [
+                              "Utilities",
+                              0.0087,
+                              87000,
+                              10000000,
+                              410,
+                              "2019-03-19T18:49:02"
+                          ],
+                          [
+                              "Space",
+                              0.025,
+                              250000,
+                              10000000,
+                              410,
+                              "2019-03-19T18:49:02"
+                          ]
+                      ],
+                      "numRows": 4,
+                      "numColumns": 6,
+                      "fromcache": true
+                  }
+      summary: Query a DataSet
+      operationId: Query_a_DataSet
+      description: Queries the data in an existing Domo DataSet
+      parameters:
+        - in: path
+          name: dataset_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: body
+          name: body
+          multiline: true
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          example: |
+            {"sql": "${query}"}
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        description: Generated by Shuffler.io
+        required: false
+        content:
+          example:
+            example: |
+              {"sql": "${query}"}
+  /datasets:
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: >-
+                  HTTP/1.1 200 OK
+
+                  Content-Type: application/json
+
+                  Content-Length: 948
+
+
+                  [ {
+                    "id": "08a061e2-12a2-4646-b4bc-20beddb403e3",
+                    "name": "Questions regarding Euclid's Fundamental Theorem of Arithmetic",
+                    "rows": 1,
+                    "columns": 6,
+                    "createdAt": "2015-12-10T07:06:14Z",
+                    "updatedAt": "2016-02-29T20:56:20.567Z"
+                  }, {
+                    "id": "317970a1-6a6e-4f70-8e09-44cf5f34cf44",
+                    "name": "Ideas Regarding Physics",
+                    "description": "Notes",
+                    "rows": 1289280,
+                    "columns": 9,
+                    "createdAt": "2013-09-24T20:51:48Z",
+                    "updatedAt": "2016-02-29T20:56:07.619Z"
+                  }, {
+                    "id": "cc22901d-c856-47c5-89a3-5228a4fa5663",
+                    "name": "Rene Descartes Mentions",
+                    "description": "",
+                    "rows": 194723231,
+                    "columns": 12,
+                    "createdAt": "2014-05-01T22:01:17Z",
+                    "updatedAt": "2016-02-29T20:56:05.034Z"
+                  }, {
+                    "id": "36ea3481-5b90-4181-a4a8-4d9388e85d9e",
+                    "name": "Symbolic Logic",
+                    "description": "",
+                    "rows": 349660,
+                    "columns": 12,
+                    "createdAt": "2014-11-26T18:29:09Z",
+                    "updatedAt": "2016-02-29T20:55:50.337Z"
+                  } ]
+      summary: List DataSets
+      operationId: List_DataSets
+      description: Get a list of all DataSets in your Domo instance.
+      parameters:
+        - in: query
+          name: sort
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: offset
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content: {}
+    post:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  HTTP/1.1 201 Created
+                  Content-Type: application/json
+
+                  {
+                    "id": "4405ff58-1957-45f0-82bd-914d989a3ea3",
+                    "name": "Leonhard Euler Party",
+                    "description": "Mathematician Guest List",
+                    "rows": 0,
+                    "columns": 0,
+                    "schema": {
+                      "columns": [ {
+                        "type": "STRING",
+                        "name": "Friend"
+                      }, {
+                        "type": "STRING",
+                        "name": "Attending"
+                      } ]
+                    },
+                    "owner": {
+                      "id": 27,
+                      "name": "DomoSupport"
+                    },
+                    "createdAt": "2016-06-21T17:20:36Z",
+                    "updatedAt": "2016-06-21T17:20:36Z"
+                  }
+      summary: Create a DataSet
+      operationId: Create_a_DataSet
+      description: Creates a new DataSet in your Domo instance. Once the DataSet has
+        been created, data can then be imported into the DataSet.
+      parameters:
+        - in: body
+          name: body
+          multiline: true
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          example: |-
+            {
+              "name": "${dataset_name}",
+              "description": "${dataset_description}",
+              "rows":0 ,
+              "schema": {
+                "columns": [ ${columns_name}]
+              }
+            }
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        description: Generated by Shuffler.io
+        required: false
+        content:
+          example:
+            example: |-
+              {
+                "name": "${dataset_name}",
+                "description": "${dataset_description}",
+                "rows":0 ,
+                "schema": {
+                  "columns": [ ${columns_name}]
+                }
+              }
+  "/pages/{page_id}":
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json;charset=UTF-8
+
+                  {
+                      "id": 2125343,
+                      "name": "Sales",
+                      "children": [
+                          "id": "2243923",
+                          "name": "Sales Operations",
+                          "id": "234534",
+                          "name": "Sales Engineering",
+                       ]
+                  }
+      summary: Retrieve a page
+      operationId: Retrieve_a_page
+      description: Retrieves the details of an existing page.
+      parameters:
+        - in: path
+          name: page_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        content: {}
+    delete:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: HTTP/1.1 204 No Content
+      summary: Delete a page
+      operationId: Delete_a_page
+      description: Permanently deletes a page from your Domo instance.
+      parameters:
+        - in: path
+          name: page_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        content: {}
+  /pages:
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json;charset=UTF-8
+
+                  [
+                      {
+                          "id": 12272,
+                          "name": "Sales Team Goals"
+                      },
+                      {
+                          "id": 982,
+                          "name": "Product Operations"
+                      },
+                      {
+                          "id": 636,
+                          "name": "Customer Retention"
+                          "children":    [
+                                "id": 32,
+                                "name": "Customers At Risk"
+                                 ]
+                      },
+                  ]
+      summary: List pages
+      operationId: List_pages
+      description: Get a list of all pages in your Domo instance.
+      parameters:
+        - in: query
+          name: limit
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          schema:
+            type: string
+          example: "10"
+        - in: query
+          name: offset
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          schema:
+            type: string
+          example: "20"
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        content: {}
+    post:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |-
+                  HTTP/1.1 201 Created
+                  Content-Type: application/json;charset=UTF-8
+
+                  {
+                     "id": 3242,
+                     "parentId": 23,
+                     "ownerId": 88,
+                     "name": "Supply Chain",
+                     "locked": TRUE,
+                     "cardIds": [12,2535,233,694], 
+                     "visibility": {
+                          "userIds": [793,20,993,19234],
+                          "groupIds": [32,25,17,74]
+                      }
+                  }
+      summary: Create a page
+      operationId: Create_a_page
+      description: Creates a new page in your Domo instance.
+      parameters:
+        - in: body
+          name: body
+          multiline: true
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          example: |-
+            {
+              "name": "${name}",
+               "parentId": ${parent_id}
+              }
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        description: Generated by Shuffler.io
+        required: false
+        content:
+          example:
+            example: |-
+              {
+                "name": "${name}",
+                 "parentId": ${parent_id}
+                }
+  "/pages/{page_id}/collections":
+    get:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: >-
+                  HTTP/1.1 200 OK
+
+                  Content-Type: application/json;charset=UTF-8
+
+
+                  [
+                      {
+                    "title": "West Sales",
+                    "description": "West Region team's KPIs for current quarter.",
+                     "cardIds": [2535,233,694], 
+                      },
+                      {
+                    "title": "Central Sales",
+                    "description": "Central Region team's KPIs for current quarter.",
+                     "cardIds": [40,583,779,3], 
+                      },
+                      {
+                    "title": "South Sales",
+                    "description": "South Region team's KPIs for current quarter",
+                     "cardIds": [34,604,889,142], 
+                      },
+                  ]
+      summary: Retrieve a page collection
+      operationId: Retrieve_a_page_collection
+      description: ""
+      parameters:
+        - in: path
+          name: page_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Content-Type
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          multiline: false
+          description: Header generated by shuffler.io OpenAPI
+          required: false
+          example: application/json
+          schema:
+            type: string
+      requestBody:
+        content: {}
+    post:
+      responses:
+        default:
+          description: default
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: HTTP/1.1 200 OK
+      summary: Create a page collection
+      operationId: Create_a_page_collection
+      description: create page collection
+      parameters:
+        - in: path
+          name: page_id
+          description: Generated by shuffler.io OpenAPI
+          required: true
+          schema:
+            type: string
+        - in: body
+          name: body
+          multiline: true
+          description: Generated by shuffler.io OpenAPI
+          required: false
+          example: |-
+            {
+              "title": "${title}",
+              "description": "${description}"
+            }
+          schema:
+            type: string
+      requestBody:
+        description: Generated by Shuffler.io
+        required: false
+        content:
+          example:
+            example: |-
+              {
+                "title": "${title}",
+                "description": "${description}"
+              }
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
