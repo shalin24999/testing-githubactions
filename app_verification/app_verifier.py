@@ -33,6 +33,7 @@ def get_files(owner_name:str, repo_name:str, pr_number:int):
     files_url = f'https://api.github.com/repos/{owner_name}/{repo_name}/pulls/{pr_number}/files'
     response = requests.get(files_url,auth=HTTPBasicAuth(username, token))
     data = response.json()
+    print(data)
     for i in data:
         if (i['filename'].split('.')[-1] == 'json' or i['filename'].split('.')[-1] == 'yaml' or i['filename'].split('.')[-1] == 'yml') and (i['status'] == 'added' or i['status'] == 'modified'):
             file_link.append(i['raw_url'])
