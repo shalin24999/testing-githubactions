@@ -116,25 +116,18 @@ def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
     
     for i in specs_url:
-        print("------I----------------------------")
-        print(i)
-        print("-----------------------------------##")
+        
         specs = get_specs(i,sandbox_token)        
-        print("-----SPECS------------------------------")
-        print(specs)
-        print("-----------------------------------##")
+        
         app_id = validate_app(specs,sandbox_token)
-        print("-------App_id-----------------------")
-        print(app_id)
-        print("-----------------------------------")
+        
         app_data = parsed_data(app_id,sandbox_token)
-        print("-----------------------------------")
-        print(app_data)
-        print("-----------------------------------")
+        
         function_id = verify_app(app_data,sandbox_token)
         print("Waiting for cloud function to be deployed....")
         time.sleep(90)
         function_url = get_function_url(function_id)
-        print(test_cloud_function(function_url))
+        print(function_url)
+        #print(test_cloud_function(function_url))
 wrapper_func()
 
