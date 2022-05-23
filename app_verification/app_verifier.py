@@ -34,7 +34,7 @@ def get_files(owner_name:str, repo_name:str, pr_number:int):
     files_url = f'https://api.github.com/repos/{owner_name}/{repo_name}/pulls/{pr_number}/files'
     response = requests.get(files_url,auth=HTTPBasicAuth(username, token))
     data = response.json()
-    print(data)
+    #print(data)
     for i in data:
         if (i['filename'].split('.')[-1] == 'json' or i['filename'].split('.')[-1] == 'yaml' or i['filename'].split('.')[-1] == 'yml') and (i['status'] == 'added' or i['status'] == 'modified'):
             file_link.append(i['raw_url'])
@@ -45,12 +45,12 @@ def get_specs(spec_url,sandbox_token):
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
-    response = requests.post("https://cccb-103-54-21-209.in.ngrok.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
+    response = requests.post("https://sandbox.shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
     return response.text
 
 #validate app and get app_id
 def validate_app(app_specs, sandbox_token):
-    validate_url = "https://cccb-103-54-21-209.in.ngrok.io/api/v1/validate_openapi"
+    validate_url = "https://sandbox.shuffler.io/api/v1/validate_openapi"
     headers = {
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
@@ -68,7 +68,7 @@ def parsed_data(app_id, sandbox_token):
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
-    full_data = f"https://cccb-103-54-21-209.in.ngrok.io/api/v1/get_openapi/{str(app_id)}"
+    full_data = f"https://sandbox.shuffler.io/api/v1/get_openapi/{str(app_id)}"
     save = requests.get(full_data,headers=headers)
     print('sending full data ->',save.status_code)
     if not save.raise_for_status():
@@ -77,7 +77,7 @@ def parsed_data(app_id, sandbox_token):
 
 #Verify app
 def verify_app(app_data, sandbox_token):
-    verify_app_url = "https://cccb-103-54-21-209.in.ngrok.io/api/v1/verify_openapi"
+    verify_app_url = "https://sandbox.shuffler.io/api/v1/verify_openapi"
     headers = {
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
@@ -116,15 +116,19 @@ def test_cloud_function(function_url):
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
     for i in specs_url:
-        specs = get_specs(i,sandbox_token)
+        specs = get_specs(i,sandbox_token)        
         app_id = validate_app(specs,sandbox_token)
+        print("-----------------------------------")
         print(app_id)
+        print("-----------------------------------")
         app_data = parsed_data(app_id,sandbox_token)
+        print("-----------------------------------")
+        print(app_data)
+        print("-----------------------------------")
         function_id = verify_app(app_data,sandbox_token)
         print("Waiting for cloud function to be deployed....")
         time.sleep(90)
         function_url = get_function_url(function_id)
         print(test_cloud_function(function_url))
 wrapper_func()
-
 
