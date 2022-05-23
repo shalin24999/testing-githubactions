@@ -118,6 +118,7 @@ def wrapper_func():
     for i in specs_url:
         specs = get_specs(i,sandbox_token)
         app_id = validate_app(specs,sandbox_token)
+        print(app_id)
         app_data = parsed_data(app_id,sandbox_token)
         function_id = verify_app(app_data,sandbox_token)
         print("Waiting for cloud function to be deployed....")
