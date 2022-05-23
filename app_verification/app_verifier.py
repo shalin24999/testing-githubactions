@@ -21,6 +21,7 @@ pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
 json_account_info = json.loads(fr'{service_account_sandbox}')
+print(json_account_info)
 credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
 locations = service.projects().locations().list(name="projects/shuffle-sandbox-337810").execute()
