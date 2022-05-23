@@ -45,12 +45,12 @@ def get_specs(spec_url,sandbox_token):
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
-    response = requests.post("https://sandbox.shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
+    response = requests.post("https://cccb-103-54-21-209.in.ngrok.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
     return response.text
 
 #validate app and get app_id
 def validate_app(app_specs, sandbox_token):
-    validate_url = "https://sandbox.shuffler.io/api/v1/validate_openapi"
+    validate_url = "https://cccb-103-54-21-209.in.ngrok.io/api/v1/validate_openapi"
     headers = {
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
@@ -68,7 +68,7 @@ def parsed_data(app_id, sandbox_token):
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
-    full_data = f"https://sandbox.shuffler.io/api/v1/get_openapi/{str(app_id)}"
+    full_data = f"https://cccb-103-54-21-209.in.ngrok.io/api/v1/get_openapi/{str(app_id)}"
     save = requests.get(full_data,headers=headers)
     print('sending full data ->',save.status_code)
     if not save.raise_for_status():
@@ -77,7 +77,7 @@ def parsed_data(app_id, sandbox_token):
 
 #Verify app
 def verify_app(app_data, sandbox_token):
-    verify_app_url = "https://sandbox.shuffler.io/api/v1/verify_openapi"
+    verify_app_url = "https://cccb-103-54-21-209.in.ngrok.io/api/v1/verify_openapi"
     headers = {
         "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
