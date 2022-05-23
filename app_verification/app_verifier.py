@@ -15,15 +15,15 @@ from google.oauth2 import service_account
 #Add shuffle-sandbox service account and token
 username = os.environ['USER_NAME']
 token = os.environ['TOKEN']
-service_account_shuffler = os.environ['SERVICE_ACCOUNT_SHUFFLER']
-shuffle_token = os.environ['SHUFFLE_USER_TOKEN']
+service_account_sandbox = os.environ['SERVICE_ACCOUNT_SANDBOX']
+sandbox_token = os.environ['SANDBOX_USER_TOKEN']
 pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
-json_account_info = json.loads(fr'{service_account_shuffler}')
+json_account_info = json.loads(fr'{service_account_sandbox}')
 credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
-locations = service.projects().locations().list(name="projects/shuffler").execute()
+locations = service.projects().locations().list(name="projects/shuffle-sandbox-337810").execute()
 
 ###################################################################################################################
 
@@ -39,19 +39,19 @@ def get_files(owner_name:str, repo_name:str, pr_number:int):
             file_link.append(i['raw_url'])
     return file_link
 
-def get_specs(spec_url,shuffle_token):
+def get_specs(spec_url,sandbox_token):
     headers = {
-        "Authorization":f"Bearer {shuffle_token}",
+        "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
     response = requests.post("https://sandbox.shuffler.io/api/v1/get_openapi_uri",headers=headers,data=spec_url)
     return response.text
 
 #validate app and get app_id
-def validate_app(app_specs, shuffle_token):
+def validate_app(app_specs, sandbox_token):
     validate_url = "https://sandbox.shuffler.io/api/v1/validate_openapi"
     headers = {
-        "Authorization":f"Bearer {shuffle_token}",
+        "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
     validate_app = requests.post(validate_url,headers=headers,data=app_specs)
@@ -62,9 +62,9 @@ def validate_app(app_specs, shuffle_token):
     
 
 #Getting parsed data
-def parsed_data(app_id, shuffle_token):
+def parsed_data(app_id, sandbox_token):
     headers = {
-        "Authorization":f"Bearer {shuffle_token}",
+        "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
     full_data = f"https://sandbox.shuffler.io/api/v1/get_openapi/{str(app_id)}"
@@ -75,10 +75,10 @@ def parsed_data(app_id, shuffle_token):
     return 'File parsing failed.'
 
 #Verify app
-def verify_app(app_data, shuffle_token):
+def verify_app(app_data, sandbox_token):
     verify_app_url = "https://sandbox.shuffler.io/api/v1/verify_openapi"
     headers = {
-        "Authorization":f"Bearer {shuffle_token}",
+        "Authorization":f"Bearer {sandbox_token}",
         "Content-Type":"application/json"
     }
     deploy_app = requests.post(verify_app_url, headers = headers , data=app_data)
@@ -115,10 +115,10 @@ def test_cloud_function(function_url):
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
     for i in specs_url:
-        specs = get_specs(i,shuffle_token)
-        app_id = validate_app(specs,shuffle_token)
-        app_data = parsed_data(app_id,shuffle_token)
-        function_id = verify_app(app_data,shuffle_token)
+        specs = get_specs(i,sandbox_token)
+        app_id = validate_app(specs,sandbox_token)
+        app_data = parsed_data(app_id,sandbox_token)
+        function_id = verify_app(app_data,sandbox_token)
         print("Waiting for cloud function to be deployed....")
         time.sleep(90)
         function_url = get_function_url(function_id)
