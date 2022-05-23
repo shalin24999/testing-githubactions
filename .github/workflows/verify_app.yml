@@ -30,6 +30,7 @@ jobs:
           USER_NAME: ${{ secrets.USERNAME }}
           TOKEN: ${{ secrets.TOKEN }}
           SERVICE_ACCOUNT_SHUFFLER: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SERVICE_ACCOUNT_SANDBOX: ${{ secrets.SERVICE_ACCOUNT_SANDBOX }}
           SHUFFLE_USER_TOKEN: ${{ secrets.SHUFFLE_USER_TOKEN }}
           SANDBOX_USER_TOKEN: ${{ secrets.SANDBOX_USER_TOKEN }}
         run : |
