@@ -21,7 +21,6 @@ pr_number = os.environ['PR_NUMBER']
 
 #Creds for cloud function API
 json_account_info = json.loads(fr'{service_account_sandbox}')
-print(json_account_info)
 credentials = service_account.Credentials.from_service_account_info(json_account_info)
 service = build('cloudfunctions', 'v1',credentials=credentials)
 locations = service.projects().locations().list(name="projects/shuffle-sandbox-337810").execute()
@@ -115,10 +114,17 @@ def test_cloud_function(function_url):
 
 def wrapper_func():
     specs_url = get_files("shalin24999","testing-githubactions",pr_number)
+    
     for i in specs_url:
+        print("------I----------------------------")
+        print(i)
+        print("-----------------------------------##")
         specs = get_specs(i,sandbox_token)        
+        print("-----SPECS------------------------------")
+        print(specs)
+        print("-----------------------------------##")
         app_id = validate_app(specs,sandbox_token)
-        print("-----------------------------------")
+        print("-------App_id-----------------------")
         print(app_id)
         print("-----------------------------------")
         app_data = parsed_data(app_id,sandbox_token)
